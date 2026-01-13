@@ -45,7 +45,7 @@ class TemplateCreator:
         self.current_angle = 0
         self.rotate_start_angle = 0
         self.drag_offset = (0, 0)
-        self.handle_size = 8  # 拖拽点大小
+        self.handle_size = 25  # 拖拽点大小（更大更容易点击）
     
     def _get_handles(self, roi):
         """获取8个拖拽点位置（角点和边中点）"""
