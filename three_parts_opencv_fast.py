@@ -1,5 +1,5 @@
 """
-三零件检测器 - 极速版（图像金字塔加速）
+三零件检测器 - 完整版（检测缺少/多装）
 """
 
 import cv2
@@ -13,6 +13,13 @@ class FastTemplateDetector:
         'flat_washer': 'D:/1',
         'spring_washer': 'D:/2',
         'red_fiber': 'D:/3'
+    }
+    
+    # 标准数量
+    STANDARD_COUNT = {
+        'flat_washer': 1,
+        'spring_washer': 1,
+        'red_fiber': 1
     }
     
     def __init__(self):
@@ -44,7 +51,7 @@ class FastTemplateDetector:
         print(f"Loaded {total} templates")
     
     def detect(self, image_path, threshold=0.5):
-        """极速检测（金字塔加速）"""
+        """检测零件（金字塔加速）"""
         img = cv2.imread(image_path)
         if img is None:
             return None
@@ -52,7 +59,7 @@ class FastTemplateDetector:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         h, w = gray.shape
         
-        # 缩小图用于快速搜索
+        # 金字塔
         scale = 0.25
         small = cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
         
@@ -75,7 +82,6 @@ class FastTemplateDetector:
                 sth, stw = small_t.shape
                 
                 if sth < 5 or stw < 5:
-                    # 模板太小，直接在原图匹配
                     result = cv2.matchTemplate(gray, template, cv2.TM_CCOEFF_NORMED)
                     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
                     if max_val > best_conf:
@@ -84,14 +90,14 @@ class FastTemplateDetector:
                         best_size = (tw, th)
                     continue
                 
-                # 在缩小图上匹配
+                # 缩小图匹配
                 result = cv2.matchTemplate(small, small_t, cv2.TM_CCOEFF_NORMED)
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
                 
                 if max_val < threshold * 0.7:
                     continue
                 
-                # 在原图局部区域精细匹配
+                # 精细匹配
                 rx = int(max_loc[0] / scale)
                 ry = int(max_loc[1] / scale)
                 margin = max(tw, th) // 2
@@ -118,12 +124,79 @@ class FastTemplateDetector:
                     'confidence': best_conf
                 }
         
-        # 绘制
+        # 绘制结果
+        result_img = self._draw_results(img, results)
+        
+        # 检查装配状态
+        status = self._check_status(results)
+        
+        return result_img, results, status
+    
+    def _draw_results(self, img, results):
+        """绘制结果"""
+        result = img.copy()
+        
+        colors = {
+            'flat_washer': (0, 255, 0),      # 绿色
+            'spring_washer': (0, 255, 255),  # 黄色
+            'red_fiber': (255, 0, 255)       # 粉色
+        }
+        
+        labels = {
+            'flat_washer': 'Flat Washer',
+            'spring_washer': 'Spring Washer',
+            'red_fiber': 'Red Fiber'
+        }
+        
         for part_name, data in results.items():
             x, y, bw, bh = data['bbox']
-            cv2.rectangle(img, (x, y), (x+bw, y+bh), (0, 255, 0), 2)
+            color = colors.get(part_name, (255, 255, 255))
+            conf = data['confidence']
+            
+            # 绘制矩形
+            cv2.rectangle(result, (x, y), (x+bw, y+bh), color, 2)
+            
+            # 绘制标签
+            label = f"{labels[part_name]} ({conf:.2f})"
+            cv2.putText(result, label, (x, y - 5),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
         
-        return img, results
+        return result
+    
+    def _check_status(self, results):
+        """检查装配状态"""
+        status = {
+            'ok': True,
+            'missing': [],
+            'extra': [],
+            'message': ''
+        }
+        
+        for part_name in self.part_names:
+            standard = self.STANDARD_COUNT[part_name]
+            detected = 1 if part_name in results else 0
+            
+            if detected < standard:
+                status['ok'] = False
+                status['missing'].append(part_name)
+            elif detected > standard:
+                status['ok'] = False
+                status['extra'].append(part_name)
+        
+        # 生成消息
+        if status['ok']:
+            status['message'] = 'OK - All parts present'
+        else:
+            msg = []
+            if status['missing']:
+                missing_names = [p.replace('_', ' ').title() for p in status['missing']]
+                msg.append(f"Missing: {', '.join(missing_names)}")
+            if status['extra']:
+                extra_names = [p.replace('_', ' ').title() for p in status['extra']]
+                msg.append(f"Extra: {', '.join(extra_names)}")
+            status['message'] = ' | '.join(msg)
+        
+        return status
 
 
 def main():
@@ -131,7 +204,22 @@ def main():
     import time
     
     if len(sys.argv) < 2:
-        print("Usage: python three_parts_opencv_fast.py <image>")
+        print("""
+Template Detector - Check Missing/Extra Parts
+
+Usage:
+  python three_parts_opencv_fast.py <image>
+
+Standard Configuration:
+  - 1x Flat Washer
+  - 1x Spring Washer
+  - 1x Red Fiber
+
+Template Paths:
+  D:/1/template1.png -> flat_washer
+  D:/2/template1.png -> spring_washer
+  D:/3/template1.png -> red_fiber
+""")
         return
     
     detector = FastTemplateDetector()
@@ -141,11 +229,48 @@ def main():
     elapsed = (time.time() - start) * 1000
     
     if result:
-        img, results = result
-        for name, data in results.items():
-            print(f"[OK] {name}: conf={data['confidence']:.3f}")
-        print(f"Time: {elapsed:.1f} ms")
+        img, results, status = result
+        
+        print("\n" + "=" * 60)
+        print("DETECTION RESULT")
+        print("=" * 60)
+        
+        labels = {
+            'flat_washer': 'Flat Washer',
+            'spring_washer': 'Spring Washer',
+            'red_fiber': 'Red Fiber'
+        }
+        
+        for part_name in detector.part_names:
+            standard = detector.STANDARD_COUNT[part_name]
+            if part_name in results:
+                conf = results[part_name]['confidence']
+                print(f"[OK] {labels[part_name]}: Found (conf={conf:.3f})")
+            else:
+                print(f"[X]  {labels[part_name]}: Missing")
+        
+        print("=" * 60)
+        print(f"Status: {status['message']}")
+        print("=" * 60)
+        print(f"Time: {elapsed:.1f} ms\n")
+        
+        # 在图片上显示状态
+        if status['ok']:
+            cv2.putText(img, "OK", (10, 40),
+                       cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3)
+        else:
+            cv2.putText(img, "ERROR", (10, 40),
+                       cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 3)
+            
+            # 显示错误详情
+            y_offset = 80
+            for line in status['message'].split('|'):
+                cv2.putText(img, line.strip(), (10, y_offset),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                y_offset += 30
+        
         cv2.imwrite("result.png", img)
+        print("Saved: result.png")
 
 
 if __name__ == "__main__":
