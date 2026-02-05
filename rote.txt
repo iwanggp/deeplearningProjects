@@ -1,0 +1,68 @@
+#include <opencv2/opencv.hpp>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+
+// ROI 跟随 rotateImageNoThrow 的方式同步旋转：输出外接轴对齐 cv::Rect
+static cv::Rect rotateRoiSameAsRotateImageNoThrow(const cv::Rect& roi,
+                                                  const cv::Size& srcSize,
+                                                  double angle_deg,
+                                                  bool keep_full = true,
+                                                  bool clip_to_dst = true)
+{
+    if (srcSize.width <= 0 || srcSize.height <= 0 || !std::isfinite(angle_deg))
+        return cv::Rect();
+
+    // 与 rotateImageNoThrow 一致：中心与旋转矩阵
+    const cv::Point2f center((srcSize.width - 1) * 0.5f, (srcSize.height - 1) * 0.5f);
+    cv::Mat M = cv::getRotationMatrix2D(center, angle_deg, 1.0);
+
+    cv::Size dstSize = srcSize;
+
+    // 与 rotateImageNoThrow 一致：keep_full 的 dstSize + 平移补偿
+    if (keep_full)
+    {
+        std::vector<cv::Point2f> corners = {
+            {0.f, 0.f},
+            {(float)srcSize.width, 0.f},
+            {(float)srcSize.width, (float)srcSize.height},
+            {0.f, (float)srcSize.height}
+        };
+        std::vector<cv::Point2f> tc(4);
+        cv::transform(corners, tc, M);
+
+        float minx = tc[0].x, maxx = tc[0].x;
+        float miny = tc[0].y, maxy = tc[0].y;
+        for (int i = 1; i < 4; ++i)
+        {
+            minx = std::min(minx, tc[i].x);
+            maxx = std::max(maxx, tc[i].x);
+            miny = std::min(miny, tc[i].y);
+            maxy = std::max(maxy, tc[i].y);
+        }
+
+        dstSize = cv::Size((int)std::ceil(maxx - minx), (int)std::ceil(maxy - miny));
+        if (dstSize.width <= 0 || dstSize.height <= 0) return cv::Rect();
+
+        M.at<double>(0, 2) -= minx;
+        M.at<double>(1, 2) -= miny;
+    }
+
+    // 变换 ROI 四点
+    std::vector<cv::Point2f> p = {
+        {(float)roi.x, (float)roi.y},
+        {(float)(roi.x + roi.width), (float)roi.y},
+        {(float)(roi.x + roi.width), (float)(roi.y + roi.height)},
+        {(float)roi.x, (float)(roi.y + roi.height)}
+    };
+    std::vector<cv::Point2f> tp(4);
+    cv::transform(p, tp, M);
+
+    cv::Rect out = cv::boundingRect(tp);
+
+    if (clip_to_dst)
+    {
+        out &= cv::Rect(0, 0, dstSize.width, dstSize.height);
+    }
+    return out;
+}
