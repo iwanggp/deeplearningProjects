@@ -1,6 +1,4 @@
 增加一二些信息
-cv::RotatedRect minBoundingRect = calcStableMinAreaRect(contour);
-
 namespace
 {
 	float normalizeAngle180(float angleDeg)
@@ -90,4 +88,6 @@ namespace
 cv::RotatedRect minBoundingRect = cv::minAreaRect(contour);
 
 
+
 cv::RotatedRect minBoundingRect = calcStableMinAreaRect(contour);
+
