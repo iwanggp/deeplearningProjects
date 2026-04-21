@@ -66,4 +66,3 @@ static cv::Rect rotateRoiSameAsRotateImageNoThrow(const cv::Rect& roi,
     }
     return out;
 }
-我爱郝晓倩
