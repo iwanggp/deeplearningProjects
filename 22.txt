@@ -1,0 +1,21 @@
+# 1. 安装 https 支持
+sudo apt install apt-transport-https -y
+
+# 2. 添加 Intel 公钥
+sudo mkdir -p /etc/apt/keyrings
+curl -sSf https://librealsense.intel.com/Debian/librealsense.pgp \
+  | sudo tee /etc/apt/keyrings/librealsense.pgp > /dev/null
+
+# 3. 添加软件源
+echo "deb [signed-by=/etc/apt/keyrings/librealsense.pgp] \
+https://librealsense.intel.com/Debian/apt-repo \
+$(lsb_release -cs) main" \
+| sudo tee /etc/apt/sources.list.d/librealsense.list
+
+# 4. 更新并安装
+sudo apt update
+sudo apt install librealsense2-dkms librealsense2-utils -y
+
+# 5. Python 绑定（用 pyrealsense2 的话必装）
+sudo apt install librealsense2-dev -y
+pip install pyrealsense2
