@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="900" viewBox="0 0 1500 900">
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L10,5 L0,10 z" fill="#000"/>
+  </marker>
+  <style>
+    .title { font: 700 28px "SimSun", serif; fill: #000; }
+    .box { fill: #fff; stroke: #000; stroke-width: 2; }
+    .big { fill: #fff; stroke: #000; stroke-width: 2.5; }
+    .line { stroke: #000; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+    .dash { stroke: #000; stroke-width: 1.8; fill: none; stroke-dasharray: 7 6; }
+    .text { font: 18px "SimSun", serif; fill: #000; }
+    .small { font: 15px "SimSun", serif; fill: #000; }
+  </style>
+</defs>
+
+<text class="title" x="750.0" y="42" text-anchor="middle">图X 自定义交互协议整体结构示意图</text>
+
+<!-- 左侧：手套模块 -->
+<rect class="big" x="70" y="110" width="300" height="660"/>
+<text class="text" x="220" y="145" text-anchor="middle">手套模块</text>
+
+<rect class="box" x="110" y="200" width="220" height="80"/>
+<text class="text" x="220" y="235" text-anchor="middle">识别单元</text>
+<text class="small" x="220" y="262" text-anchor="middle">身份信息 / 参数索引</text>
+
+<rect class="box" x="110" y="345" width="220" height="90"/>
+<text class="text" x="220" y="380" text-anchor="middle">状态采集单元</text>
+<text class="small" x="220" y="408" text-anchor="middle">装配状态 / 健康状态 / 寿命状态</text>
+
+<rect class="box" x="110" y="500" width="220" height="100"/>
+<text class="text" x="220" y="536" text-anchor="middle">协议封装单元</text>
+<text class="small" x="220" y="566" text-anchor="middle">报文组帧 / 状态码 / 校验</text>
+
+<!-- 中间：协议层 -->
+<rect class="big" x="470" y="110" width="560" height="660"/>
+<text class="text" x="750" y="145" text-anchor="middle">自定义交互协议</text>
+
+<rect class="box" x="520" y="200" width="460" height="95"/>
+<text class="text" x="750" y="235" text-anchor="middle">通用字段</text>
+<text class="small" x="750" y="262" text-anchor="middle">帧头 / 版本 / 报文类型 / 长度 / 模块标识 / 校验</text>
+
+<rect class="box" x="520" y="350" width="460" height="150"/>
+<text class="text" x="750" y="385" text-anchor="middle">业务字段</text>
+<text class="small" x="750" y="415" text-anchor="middle">身份信息字段</text>
+<text class="small" x="750" y="442" text-anchor="middle">状态信息字段</text>
+<text class="small" x="750" y="469" text-anchor="middle">参数信息字段</text>
+<text class="small" x="750" y="496" text-anchor="middle">健康/寿命/告警字段</text>
+
+<rect class="box" x="520" y="560" width="460" height="150"/>
+<text class="text" x="750" y="595" text-anchor="middle">协议交互逻辑</text>
+<text class="small" x="750" y="625" text-anchor="middle">握手请求 → 身份识别 → 兼容判断</text>
+<text class="small" x="750" y="652" text-anchor="middle">参数匹配 → 配置确认 → 周期状态上报</text>
+<text class="small" x="750" y="679" text-anchor="middle">异常告警 → 可视化映射</text>
+
+<!-- 右侧：控制系统 -->
+<rect class="big" x="1130" y="110" width="300" height="660"/>
+<text class="text" x="1280" y="145" text-anchor="middle">控制系统</text>
+
+<rect class="box" x="1170" y="200" width="220" height="90"/>
+<text class="text" x="1280" y="235" text-anchor="middle">协议解析单元</text>
+<text class="small" x="1280" y="263" text-anchor="middle">解析 / 校验 / 状态机</text>
+
+<rect class="box" x="1170" y="355" width="220" height="95"/>
+<text class="text" x="1280" y="390" text-anchor="middle">自动匹配单元</text>
+<text class="small" x="1280" y="418" text-anchor="middle">兼容判断 / 参数加载</text>
+
+<rect class="box" x="1170" y="515" width="220" height="95"/>
+<text class="text" x="1280" y="550" text-anchor="middle">可视化显示单元</text>
+<text class="small" x="1280" y="578" text-anchor="middle">状态灯 / 进度条 / 告警框</text>
+
+<rect class="box" x="1170" y="675" width="220" height="70"/>
+<text class="text" x="1280" y="715" text-anchor="middle">记录与追溯单元</text>
+
+<!-- 箭头 -->
+<line class="line" x1="330" y1="240" x2="520" y2="240"/>
+<line class="line" x1="330" y1="390" x2="520" y2="425"/>
+<line class="line" x1="330" y1="550" x2="520" y2="635"/>
+
+<line class="line" x1="980" y1="240" x2="1170" y2="240"/>
+<line class="line" x1="980" y1="425" x2="1170" y2="402"/>
+<line class="line" x1="980" y1="635" x2="1170" y2="710"/>
+
+<!-- 反馈虚线 -->
+<line class="dash" x1="1170" y1="402" x2="1030" y2="402"/>
+<line class="dash" x1="1030" y1="402" x2="1030" y2="635"/>
+<line class="dash" x1="1030" y1="635" x2="980" y2="635"/>
+
+<text class="small" x="425" y="225" text-anchor="middle">身份信息上报</text>
+<text class="small" x="425" y="375" text-anchor="middle">状态信息上报</text>
+<text class="small" x="425" y="535" text-anchor="middle">周期报文上报</text>
+
+<text class="small" x="1085" y="388" text-anchor="middle">配置确认</text>
+<text class="small" x="1035" y="620" text-anchor="middle">控制反馈 / 告警处理</text>
+
+<!-- 底部 -->
+<rect class="box" x="260" y="810" width="980" height="55"/>
+<text class="small" x="750" y="843" text-anchor="middle">模块接入 → 协议交互 → 自动匹配 → 可视化显示 → 记录追溯</text>
+
+</svg>

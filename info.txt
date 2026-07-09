@@ -1,1 +1,93 @@
 增加一二些信息
+namespace
+{
+	float normalizeAngle180(float angleDeg)
+	{
+		while (angleDeg < 0.0f) angleDeg += 180.0f;
+		while (angleDeg >= 180.0f) angleDeg -= 180.0f;
+		return angleDeg;
+	}
+
+	cv::RotatedRect calcStableMinAreaRect(const std::vector<cv::Point>& contour)
+	{
+		cv::RotatedRect rr = cv::minAreaRect(contour);
+
+		cv::Point2f pts[4];
+		rr.points(pts);
+
+		struct EdgeInfo
+		{
+			cv::Point2f p1;
+			cv::Point2f p2;
+			cv::Point2f mid;
+			float len;
+		};
+
+		std::array<EdgeInfo, 4> edges;
+		for (int i = 0; i < 4; ++i) {
+			const cv::Point2f& p1 = pts[i];
+			const cv::Point2f& p2 = pts[(i + 1) % 4];
+
+			float dx = p2.x - p1.x;
+			float dy = p2.y - p1.y;
+			float len = std::sqrt(dx * dx + dy * dy);
+
+			edges[i] = { p1, p2, cv::Point2f((p1.x + p2.x) * 0.5f, (p1.y + p2.y) * 0.5f), len };
+		}
+
+		// 长边、短边
+		float longLen = edges[0].len;
+		float shortLen = edges[0].len;
+		for (int i = 1; i < 4; ++i) {
+			longLen = std::max(longLen, edges[i].len);
+			shortLen = std::min(shortLen, edges[i].len);
+		}
+
+		// 固定参考边：
+		// 先找“长边”中的那一条；
+		// 如果有两条平行长边，就选“更靠上”的那一条；
+		// 这样角度参考边就固定了，不会乱跳。
+		const float eps = 1e-3f;
+		EdgeInfo refEdge = edges[0];
+		bool found = false;
+
+		for (int i = 0; i < 4; ++i) {
+			if (std::fabs(edges[i].len - longLen) < eps) {
+				if (!found) {
+					refEdge = edges[i];
+					found = true;
+				}
+				else {
+					// 选更靠上的边；若 y 接近，再选更靠左的
+					if (edges[i].mid.y < refEdge.mid.y - eps ||
+						(std::fabs(edges[i].mid.y - refEdge.mid.y) < eps && edges[i].mid.x < refEdge.mid.x)) {
+						refEdge = edges[i];
+					}
+				}
+			}
+		}
+
+		cv::Point2f p1 = refEdge.p1;
+		cv::Point2f p2 = refEdge.p2;
+
+		// 固定方向：尽量从左到右；如果几乎竖直，就从上到下
+		if (p1.x > p2.x || (std::fabs(p1.x - p2.x) < eps && p1.y > p2.y)) {
+			std::swap(p1, p2);
+		}
+
+		float angle = std::atan2(p2.y - p1.y, p2.x - p1.x) * 180.0f / static_cast<float>(CV_PI);
+		angle = normalizeAngle180(angle);
+
+		// 重新构造一个“角度稳定”的 RotatedRect
+		return cv::RotatedRect(rr.center, cv::Size2f(longLen, shortLen), angle);
+	}
+}
+
+
+
+cv::RotatedRect minBoundingRect = cv::minAreaRect(contour);
+
+
+
+cv::RotatedRect minBoundingRect = calcStableMinAreaRect(contour);
+

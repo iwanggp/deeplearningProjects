@@ -1,0 +1,58 @@
+[project]
+name = "posecnn"
+version = "0.1.0"
+description = "PoseCNN 6D Object Pose Estimation & Robotic Grasping"
+requires-python = ">=3.8,<3.9"
+dependencies = [
+    # PyTorch ecosystem (CUDA 12.1, via [tool.uv.sources])
+    "torch==2.4.1",
+    "torchvision==0.19.1",
+    "torchaudio==2.4.1",
+
+    # Numerical / scientific
+    "numpy==1.24.4",
+    "scipy==1.10.1",
+    "sympy==1.13.3",
+    "networkx==3.1",
+
+    # Vision & rendering
+    "opencv-python==4.10.0.84",
+    "pillow==10.4.0",
+    "imageio==2.35.1",
+    "matplotlib==3.7.5",
+    "pyopengl==3.1.0",
+    "pyrender==0.1.45",
+    "trimesh==4.5.3",
+    "pyglet==2.0.20",
+    "freetype-py==2.5.1",
+
+    # Robotics / geometry
+    "pyquaternion==0.9.9",
+
+    # Utilities
+    "tqdm==4.67.1",
+    "pyyaml==6.0.2",
+    "requests==2.32.3",
+
+    # Jupyter
+    "jupyterlab==4.2.5",
+    "ipykernel==6.29.5",
+    "ipython==8.12.2",
+    "ipywidgets==7.8.1",
+]
+
+[tool.uv]
+# 允许从多个索引混合安装
+index-strategy = "unsafe-best-match"
+
+# PyTorch CUDA 12.1 专用索引（RTX 30/40 系显卡）
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+# 将 torch 系包路由到 PyTorch 官方 CUDA 索引
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu121" }]
+torchvision = [{ index = "pytorch-cu121" }]
+torchaudio = [{ index = "pytorch-cu121" }]
